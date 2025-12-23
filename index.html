@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athlete Performance Pro-Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --danger: #ef4444; --bg: #f8fafc; --white: #ffffff; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
+        .container { max-width: 900px; margin: auto; }
+        
+        /* Form Card */
+        .card { background: var(--white); padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; }
+        input:focus { border-color: var(--primary); }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 15px; transition: 0.2s; }
+        .btn-main:hover { opacity: 0.9; }
+
+        /* Athlete Card */
+        .player-card { background: var(--white); padding: 25px; border-radius: 16px; margin-top: 30px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); position: relative; border-top: 6px solid var(--primary); }
+        .del-athlete { position: absolute; top: 20px; right: 20px; background: #fee2e2; color: var(--danger); border: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; }
+
+        .sport-section { margin-top: 30px; border: 1px solid #f1f5f9; padding: 15px; border-radius: 12px; }
+        .sport-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; }
+        .up { background: #dcfce7; color: #166534; }
+        .down { background: #fee2e2; color: #991b1b; }
+
+        /* History Table */
+        .history { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 13px; }
+        .history th { text-align: left; padding: 8px; border-bottom: 2px solid #f1f5f9; color: #64748b; }
+        .history td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
+        .btn-del-entry { color: var(--danger); border: none; background: none; cursor: pointer; font-weight: 600; text-decoration: underline; }
+
+        canvas { max-height: 300px; width: 100% !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card">
+        <h2 style="margin-top:0">📊 Athlete Entry</h2>
+        <div class="form-grid">
+            <div><label style="font-size:12px; font-weight:600">Name</label><input type="text" id="pName" placeholder="Rajveer"></div>
+            <div>
+                <label style="font-size:12px; font-weight:600">Event</label>
+                <select id="sName">
+                    <optgroup label="Sprints (Time Based)">
+                        <option value="100m Sprint">100m Sprint</option>
+                        <option value="200m Sprint">200m Sprint</option>
+                        <option value="400m Race">400m Race</option>
+                        <option value="600m Run">600m Run</option>
+                        <option value="800m Run">800m Run</option>
+                    </optgroup>
+                    <optgroup label="Field (Distance Based)">
+                        <option value="Long Jump">Long Jump</option>
+                        <option value="High Jump">High Jump</option>
+                        <option value="Javelin Throw">Javelin Throw</option>
+                        <option value="Shot Put">Shot Put</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div><label style="font-size:12px; font-weight:600">Date</label><input type="date" id="pDate"></div>
+            <div><label style="font-size:12px; font-weight:600">Score</label><input type="number" id="pScore" placeholder="Sec/Mtr" step="0.01"></div>
+        </div>
+        <button class="btn-main" onclick="saveData()">Save Record & Update Graph</button>
+    </div>
+
+    <div id="displayArea"></div>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('athleteMasterTrackerV3')) || {};
+
+    function saveData() {
+        const name = document.getElementById('pName').value.trim();
+        const sport = document.getElementById('sName').value;
+        const date = document.getElementById('pDate').value;
+        const score = parseFloat(document.getElementById('pScore').value);
+
+        if(!name || !date || isNaN(score)) return alert("Please fill all fields!");
+
+        if(!db[name]) db[name] = {};
+        if(!db[name][sport]) db[name][sport] = [];
+
+        db[name][sport].push({id: Date.now(), date, score});
+        db[name][sport].sort((a,b) => new Date(a.date) - new Date(b.date));
+        
+        updateStorage();
+        render();
+        document.getElementById('pScore').value = '';
+    }
+
+    function deleteAthlete(name) {
+        if(confirm(`Delete all records for ${name}?`)) {
+            delete db[name];
+            updateStorage();
+            render();
+        }
+    }
+
+    function deleteEntry(name, sport, id) {
+        db[name][sport] = db[name][sport].filter(e => e.id !== id);
+        if(db[name][sport].length === 0) delete db[name][sport];
+        if(Object.keys(db[name]).length === 0) delete db[name];
+        updateStorage();
+        render();
+    }
+
+    function updateStorage() { localStorage.setItem('athleteMasterTrackerV3', JSON.stringify(db)); }
+
+    function render() {
+        const area = document.getElementById('displayArea');
+        area.innerHTML = '';
+
+        for(let player in db) {
+            const card = document.createElement('div');
+            card.className = 'player-card';
+            card.innerHTML = `
+                <button class="del-athlete" onclick="deleteAthlete('${player}')">Delete Athlete</button>
+                <h2 style="margin:0">👤 ${player}</h2>
+            `;
+
+            for(let sport in db[player]) {
+                const data = db[player][sport];
+                const isSprint = sport.toLowerCase().includes('m ') || sport.toLowerCase().includes('run');
+                const first = data[0].score;
+                const last = data[data.length - 1].score;
+                let improving = isSprint ? last < first : last > first;
+
+                const chartId = `chart-${player}-${sport}`.replace(/\s+/g, '-');
+                
+                let rows = data.map(d => `
+                    <tr>
+                        <td>${d.date}</td>
+                        <td><strong>${d.score}${isSprint?'s':'m'}</strong></td>
+                        <td><button class="btn-del-entry" onclick="deleteEntry('${player}', '${sport}', ${d.id})">Delete</button></td>
+                    </tr>
+                `).join('');
+
+                card.innerHTML += `
+                    <div class="sport-section">
+                        <div class="sport-header">
+                            <strong>🎯 ${sport}</strong>
+                            <span class="badge ${improving ? 'up' : 'down'}">${improving ? 'IMPROVING' : 'DECLINING'}</span>
+                        </div>
+                        <canvas id="${chartId}"></canvas>
+                        <table class="history">
+                            <thead><tr><th>Date</th><th>Score</th><th>Action</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+
+                setTimeout(() => {
+                    new Chart(document.getElementById(chartId), {
+                        type: 'line',
+                        data: {
+                            labels: data.map(d => d.date),
+                            datasets: [{
+                                label: sport,
+                                data: data.map(d => d.score),
+                                borderColor: '#2563eb',
+                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 5
+                            }]
+                        },
+                        options: {
+                            scales: { y: { reverse: isSprint, ticks: { font: { weight: 'bold' } } } },
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }, 0);
+            }
+            area.appendChild(card);
+        }
+    }
+    render();
+</script>
+</body>
+</html>
