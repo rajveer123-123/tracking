@@ -3,77 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Athlete Performance Pro-Tracker</title>
+    <title>Athlete Pro Dashboard | PB & Delete</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #2563eb; --danger: #ef4444; --bg: #f8fafc; --white: #ffffff; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; padding: 15px; color: #1e293b; }
+        :root { --primary: #2563eb; --gold: #fbbf24; --danger: #ef4444; --bg: #f8fafc; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 15px; }
         .container { max-width: 900px; margin: auto; }
         
-        /* Form Card */
-        .card { background: var(--white); padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); }
-        .btn-main { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; margin-top: 15px; transition: 0.2s; }
-        .btn-main:hover { opacity: 0.9; }
+        /* Entry Form */
+        .card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        input, select { padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 15px; }
 
         /* Athlete Card */
-        .player-card { background: var(--white); padding: 25px; border-radius: 16px; margin-top: 30px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); position: relative; border-top: 6px solid var(--primary); }
-        .del-athlete { position: absolute; top: 20px; right: 20px; background: #fee2e2; color: var(--danger); border: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; }
+        .player-card { background: white; padding: 25px; border-radius: 16px; margin-top: 30px; position: relative; border-top: 6px solid var(--primary); box-shadow: 0 10px 15px rgba(0,0,0,0.05); }
+        .del-player { position: absolute; top: 20px; right: 20px; background: #fee2e2; color: var(--danger); border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
 
-        .sport-section { margin-top: 30px; border: 1px solid #f1f5f9; padding: 15px; border-radius: 12px; }
-        .sport-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .badge { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; }
+        /* Personal Best Styling */
+        .pb-container { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .pb-badge { background: #fffbeb; border: 1px solid var(--gold); padding: 8px 15px; border-radius: 12px; color: #92400e; font-size: 13px; font-weight: bold; }
+
+        .sport-section { margin-top: 25px; border: 1px solid #f1f5f9; padding: 15px; border-radius: 12px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; float: right; font-weight: bold; }
         .up { background: #dcfce7; color: #166534; }
         .down { background: #fee2e2; color: #991b1b; }
 
         /* History Table */
-        .history { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 13px; }
-        .history th { text-align: left; padding: 8px; border-bottom: 2px solid #f1f5f9; color: #64748b; }
-        .history td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; }
-        .btn-del-entry { color: var(--danger); border: none; background: none; cursor: pointer; font-weight: 600; text-decoration: underline; }
+        .history { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 12px; }
+        .history th { text-align: left; padding: 8px; border-bottom: 1px solid #eee; }
+        .history td { padding: 8px; border-bottom: 1px solid #f9f9f9; }
+        .mini-del { color: var(--danger); background: none; border: none; cursor: pointer; text-decoration: underline; font-size: 11px; }
 
-        canvas { max-height: 300px; width: 100% !important; }
+        canvas { max-height: 250px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card">
-        <h2 style="margin-top:0">📊 Athlete Entry</h2>
+        <h2 style="margin-top:0">🏆 Performance Entry</h2>
         <div class="form-grid">
-            <div><label style="font-size:12px; font-weight:600">Name</label><input type="text" id="pName" placeholder="Rajveer"></div>
-            <div>
-                <label style="font-size:12px; font-weight:600">Event</label>
-                <select id="sName">
-                    <optgroup label="Sprints (Time Based)">
-                        <option value="100m Sprint">100m Sprint</option>
-                        <option value="200m Sprint">200m Sprint</option>
-                        <option value="400m Race">400m Race</option>
-                        <option value="600m Run">600m Run</option>
-                        <option value="800m Run">800m Run</option>
-                    </optgroup>
-                    <optgroup label="Field (Distance Based)">
-                        <option value="Long Jump">Long Jump</option>
-                        <option value="High Jump">High Jump</option>
-                        <option value="Javelin Throw">Javelin Throw</option>
-                        <option value="Shot Put">Shot Put</option>
-                    </optgroup>
-                </select>
-            </div>
-            <div><label style="font-size:12px; font-weight:600">Date</label><input type="date" id="pDate"></div>
-            <div><label style="font-size:12px; font-weight:600">Score</label><input type="number" id="pScore" placeholder="Sec/Mtr" step="0.01"></div>
+            <input type="text" id="pName" placeholder="Athlete Name">
+            <select id="sName">
+                <optgroup label="Sprints (Seconds)">
+                    <option value="100m Sprint">100m Sprint</option>
+                    <option value="200m Sprint">200m Sprint</option>
+                    <option value="600m Run">600m Run</option>
+                    <option value="1500m Run">1500m Run</option>
+                </optgroup>
+                <optgroup label="Field (Meters)">
+                    <option value="Long Jump">Long Jump</option>
+                    <option value="High Jump">High Jump</option>
+                    <option value="Javelin Throw">Javelin Throw</option>
+                </option>
+            </select>
+            <input type="date" id="pDate">
+            <input type="number" id="pScore" placeholder="Score" step="0.01">
         </div>
-        <button class="btn-main" onclick="saveData()">Save Record & Update Graph</button>
+        <button class="btn-main" onclick="saveData()">Save & Update PB</button>
     </div>
 
     <div id="displayArea"></div>
 </div>
 
 <script>
-    let db = JSON.parse(localStorage.getItem('athleteMasterTrackerV3')) || {};
+    let db = JSON.parse(localStorage.getItem('athleteFullProDB')) || {};
 
     function saveData() {
         const name = document.getElementById('pName').value.trim();
@@ -81,7 +76,7 @@
         const date = document.getElementById('pDate').value;
         const score = parseFloat(document.getElementById('pScore').value);
 
-        if(!name || !date || isNaN(score)) return alert("Please fill all fields!");
+        if(!name || !date || isNaN(score)) return alert("Fill all details!");
 
         if(!db[name]) db[name] = {};
         if(!db[name][sport]) db[name][sport] = [];
@@ -89,15 +84,15 @@
         db[name][sport].push({id: Date.now(), date, score});
         db[name][sport].sort((a,b) => new Date(a.date) - new Date(b.date));
         
-        updateStorage();
+        localStorage.setItem('athleteFullProDB', JSON.stringify(db));
         render();
         document.getElementById('pScore').value = '';
     }
 
-    function deleteAthlete(name) {
-        if(confirm(`Delete all records for ${name}?`)) {
+    function deletePlayer(name) {
+        if(confirm(`Delete ${name}'s entire profile?`)) {
             delete db[name];
-            updateStorage();
+            localStorage.setItem('athleteFullProDB', JSON.stringify(db));
             render();
         }
     }
@@ -106,11 +101,9 @@
         db[name][sport] = db[name][sport].filter(e => e.id !== id);
         if(db[name][sport].length === 0) delete db[name][sport];
         if(Object.keys(db[name]).length === 0) delete db[name];
-        updateStorage();
+        localStorage.setItem('athleteFullProDB', JSON.stringify(db));
         render();
     }
-
-    function updateStorage() { localStorage.setItem('athleteMasterTrackerV3', JSON.stringify(db)); }
 
     function render() {
         const area = document.getElementById('displayArea');
@@ -119,9 +112,21 @@
         for(let player in db) {
             const card = document.createElement('div');
             card.className = 'player-card';
+            
+            // PB Calculation Logic
+            let pbSection = '<div class="pb-container">';
+            for(let sport in db[player]) {
+                const scores = db[player][sport].map(d => d.score);
+                const isSprint = sport.toLowerCase().includes('m ') || sport.toLowerCase().includes('run');
+                const pb = isSprint ? Math.min(...scores) : Math.max(...scores);
+                pbSection += `<div class="pb-badge">⭐ ${sport} PB: ${pb}${isSprint?'s':'m'}</div>`;
+            }
+            pbSection += '</div>';
+
             card.innerHTML = `
-                <button class="del-athlete" onclick="deleteAthlete('${player}')">Delete Athlete</button>
+                <button class="del-player" onclick="deletePlayer('${player}')">Delete Athlete</button>
                 <h2 style="margin:0">👤 ${player}</h2>
+                ${pbSection}
             `;
 
             for(let sport in db[player]) {
@@ -130,23 +135,20 @@
                 const first = data[0].score;
                 const last = data[data.length - 1].score;
                 let improving = isSprint ? last < first : last > first;
-
                 const chartId = `chart-${player}-${sport}`.replace(/\s+/g, '-');
-                
+
                 let rows = data.map(d => `
                     <tr>
                         <td>${d.date}</td>
                         <td><strong>${d.score}${isSprint?'s':'m'}</strong></td>
-                        <td><button class="btn-del-entry" onclick="deleteEntry('${player}', '${sport}', ${d.id})">Delete</button></td>
+                        <td><button class="mini-del" onclick="deleteEntry('${player}', '${sport}', ${d.id})">Delete</button></td>
                     </tr>
                 `).join('');
 
                 card.innerHTML += `
                     <div class="sport-section">
-                        <div class="sport-header">
-                            <strong>🎯 ${sport}</strong>
-                            <span class="badge ${improving ? 'up' : 'down'}">${improving ? 'IMPROVING' : 'DECLINING'}</span>
-                        </div>
+                        <span class="badge ${improving ? 'up' : 'down'}">${improving ? 'IMPROVING' : 'DECLINING'}</span>
+                        <strong>🎯 ${sport} Progress</strong>
                         <canvas id="${chartId}"></canvas>
                         <table class="history">
                             <thead><tr><th>Date</th><th>Score</th><th>Action</th></tr></thead>
@@ -160,20 +162,9 @@
                         type: 'line',
                         data: {
                             labels: data.map(d => d.date),
-                            datasets: [{
-                                label: sport,
-                                data: data.map(d => d.score),
-                                borderColor: '#2563eb',
-                                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                                fill: true,
-                                tension: 0.3,
-                                pointRadius: 5
-                            }]
+                            datasets: [{ label: sport, data: data.map(d => d.score), borderColor: '#2563eb', fill: true, backgroundColor: 'rgba(37, 99, 235, 0.05)', tension: 0.3 }]
                         },
-                        options: {
-                            scales: { y: { reverse: isSprint, ticks: { font: { weight: 'bold' } } } },
-                            plugins: { legend: { display: false } }
-                        }
+                        options: { scales: { y: { reverse: isSprint } } }
                     });
                 }, 0);
             }
